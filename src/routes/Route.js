@@ -7,15 +7,17 @@ import DefaultLayout from "../pages/_layouts/default";
 
 export default function RouteWrapper({
   component: Component,
-  isPrivate = false,
+  isPrivate,
   ...rest
 }) {
-  const signed = false;
+  const auth = localStorage.getItem("signed");
+
+  const signed = JSON.parse(auth);
   if (!signed && isPrivate) {
-    return <Redirect to="/login" />;
+    return <Redirect to="/" />;
   }
   if (signed && !isPrivate) {
-    return <Redirect to="/" />;
+    return <Redirect to="/dashboard" />;
   }
   const Layout = signed ? DefaultLayout : AuthLayout;
   return (

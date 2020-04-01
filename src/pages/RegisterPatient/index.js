@@ -18,8 +18,10 @@ import {
   MuiPickersUtilsProvider,
   KeyboardDatePicker
 } from "@material-ui/pickers";
-import MaskedInput from "react-text-mask";
+
 import { cpfMask } from "../../utils/mask";
+import { api } from "../../services/api";
+import history from "../../services/history";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -71,18 +73,22 @@ export default function RegisterPatient() {
     return v.replace(/[^\w\s]/gi, "");
   }
   async function handleRegister() {
-    const data = {
-      username: values.username,
-      email: values.email,
-      password: values.password,
-      checked: false,
-      valid: false,
-      acceptedTerms: values.acceptedTerms,
-      documentID: clearRegex(values.documentID),
-      birthday: parseDate(values.birthday)
-    };
-    // console.log("valores", parseDate(values.birthday));
-    console.log("valores", data);
+    try {
+      const data = {
+        username: values.username,
+        email: values.email,
+        password: values.password,
+        checked: false,
+        valid: false,
+        acceptedTerms: values.acceptedTerms,
+        documentID: clearRegex(values.documentID),
+        birthday: parseDate(values.birthday)
+      };
+      const register = await api.post("registerPatient", data);
+      history.push("/login");
+    } catch (e) {
+      console.log("erro ao cadastrar", e);
+    }
   }
 
   return (

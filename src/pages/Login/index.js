@@ -1,6 +1,8 @@
 import React from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import { Paper, Button, Grid, TextField, Typography } from "@material-ui/core";
+import { api } from "../../services/api";
+import history from "../../services/history";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -31,6 +33,20 @@ export default function Login() {
       return false;
     } else {
       return true;
+    }
+  }
+  async function handleLogin() {
+    try {
+      const login = await api.post("sessionPatient", values);
+      // const patient = {
+      //   token: login.data.token.token,
+      //   ...login.data.patient
+      // };
+      await localStorage.setItem("patient", JSON.stringify(login.data));
+      await localStorage.setItem("signed", JSON.stringify(true));
+      history.push("check");
+    } catch (e) {
+      console.log("erro ao logar", e);
     }
   }
   return (
@@ -83,6 +99,7 @@ export default function Login() {
               color="primary"
               size="large"
               disabled={validForm()}
+              onClick={() => handleLogin()}
             >
               Entrar
             </Button>

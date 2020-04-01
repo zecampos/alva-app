@@ -14,7 +14,7 @@ import MenuIcon from "@material-ui/icons/Menu";
 import AccountBoxIcon from "@material-ui/icons/AccountBox";
 import ExitToAppIcon from "@material-ui/icons/ExitToApp";
 import Hidden from "@material-ui/core/Hidden";
-
+import history from "../../services/history";
 const useStyles = makeStyles(theme => ({
   root: {
     flexGrow: 1
@@ -59,6 +59,11 @@ export default function TheNavBarPatient() {
   }
   function handleClose() {
     setAnchorEl(null);
+  }
+  function handleLogout() {
+    localStorage.removeItem("patient");
+    localStorage.removeItem("signed");
+    history.push("/");
   }
   return (
     <div className={classes.root}>
@@ -109,6 +114,7 @@ export default function TheNavBarPatient() {
                 color="primary"
                 variant="outlined"
                 endIcon={<ExitToAppIcon />}
+                onClick={() => handleLogout()}
               >
                 Sair
               </Button>
