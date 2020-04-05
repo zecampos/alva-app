@@ -8,7 +8,7 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  Grid
+  Grid,
 } from "@material-ui/core";
 import { api } from "../../services/api";
 import PlaceIcon from "@material-ui/icons/Place";
@@ -29,7 +29,7 @@ export default function Home() {
     try {
       setLoading(true);
       const config = {
-        headers: { Authorization: "bearer " + t }
+        headers: { Authorization: "bearer " + t },
       };
       const l = await api.get("getMyData", config);
       console.log("location", l.data);
@@ -44,10 +44,17 @@ export default function Home() {
     (async function getLocation() {
       const patient = JSON.parse(localStorage.getItem("patient"));
       setToken(patient.patient.token);
-      await getMyLocation(patient.patient.token);
+      await navigator.geolocation.getCurrentPosition(showPosition);
+      // await getMyLocation(patient.patient.token);
     })();
   }, []);
 
+  function showPosition(position) {
+    setLocation({
+      lat: position.coords.latitude,
+      lng: position.coords.longitude,
+    });
+  }
   return (
     <>
       <Grid
@@ -65,11 +72,11 @@ export default function Home() {
             <div style={{ height: "70vh", width: "100%" }}>
               <GoogleMapReact
                 bootstrapURLKeys={{
-                  key: "AIzaSyBBtfaAFyfONdgi4gXHE1yCNGJX_vvF744"
+                  key: "AIzaSyBBtfaAFyfONdgi4gXHE1yCNGJX_vvF744",
                 }}
                 defaultCenter={{
                   lat: location.lat,
-                  lng: location.lng
+                  lng: location.lng,
                 }}
                 defaultZoom={16}
                 // yesIWantToUseGoogleMapApiInternals

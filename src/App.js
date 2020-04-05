@@ -11,6 +11,16 @@ const theme = createMuiTheme({
     primary: {
       main: "#3B5A9A"
     }
+  },
+  overrides: {
+    MuiInputBase: {
+      input: {
+        "&:-webkit-autofill": {
+          transitionDelay: "9999s",
+          transitionProperty: "background-color, color"
+        }
+      }
+    }
   }
 });
 

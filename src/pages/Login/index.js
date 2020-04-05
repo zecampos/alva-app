@@ -4,25 +4,25 @@ import { Paper, Button, Grid, TextField, Typography } from "@material-ui/core";
 import { api } from "../../services/api";
 import history from "../../services/history";
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
-    flexGrow: 1
+    flexGrow: 1,
   },
   paper: {
     padding: theme.spacing(2),
     textAlign: "center",
-    color: theme.palette.text.secondary
+    color: theme.palette.text.secondary,
   },
   input: {
-    marginTop: 30
-  }
+    marginTop: 30,
+  },
 }));
 
 export default function Login() {
   const classes = useStyles();
   const [values, setValues] = React.useState({
     email: "",
-    password: ""
+    password: "",
   });
   function handleInputChange(name, value) {
     setValues({ ...values, [name]: value });
@@ -44,7 +44,7 @@ export default function Login() {
       // };
       await localStorage.setItem("patient", JSON.stringify(login.data));
       await localStorage.setItem("signed", JSON.stringify(true));
-      history.push("check");
+      history.push("dashboard");
     } catch (e) {
       console.log("erro ao logar", e);
     }
@@ -67,27 +67,30 @@ export default function Login() {
           <Typography variant="h6" component="h2">
             Logar
           </Typography>
-          <form className={classes.root} noValidate autoComplete="off">
+          <form className={classes.root} noValidate>
+            <input
+              type="email"
+              name="email"
+              id="email"
+              style={{ display: "none" }}
+            />
             <TextField
               value={values.email}
-              onChange={value => handleInputChange("email", value.target.value)}
+              onChange={(value) =>
+                handleInputChange("email", value.target.value)
+              }
               fullWidth
-              type="email"
-              id="email"
               label="E-mail"
               variant="filled"
               className={classes.input}
-              autoComplete="off"
             />
-
+            <input type="password" id="password" style={{ display: "none" }} />
             <TextField
               value={values.password}
-              onChange={value =>
+              onChange={(value) =>
                 handleInputChange("password", value.target.value)
               }
               fullWidth
-              type="password"
-              id="password"
               label="Senha"
               variant="filled"
               className={classes.input}

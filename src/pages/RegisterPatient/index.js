@@ -1,43 +1,47 @@
 import "date-fns";
-import React from "react";
+import React, { useRef } from "react";
 import { makeStyles } from "@material-ui/core/styles";
+
 import {
   Paper,
   Button,
   Grid,
   TextField,
   Typography,
-  Input,
   InputLabel,
   Checkbox,
-  FormControlLabel
+  FormControlLabel,
 } from "@material-ui/core";
-import DateFnsUtils from "@date-io/date-fns";
-import { format } from "date-fns";
-import {
-  MuiPickersUtilsProvider,
-  KeyboardDatePicker
-} from "@material-ui/pickers";
-
-import { cpfMask } from "../../utils/mask";
+import * as Yup from "yup";
+import { Form } from "@unform/web";
+import MaskedInput from "react-text-mask";
+import { cpfMask, cepMask } from "../../utils/mask";
 import { api } from "../../services/api";
 import history from "../../services/history";
-
-const useStyles = makeStyles(theme => ({
+import Input from "../../components/Form/Input";
+import InputCpf from "../../components/Form/InputCpf";
+import { isCEP, checkCPF } from "../../utils/validadeInputs";
+const useStyles = makeStyles((theme) => ({
   root: {
-    flexGrow: 1
+    flexGrow: 1,
   },
   paper: {
     padding: theme.spacing(2),
     textAlign: "center",
-    color: theme.palette.text.secondary
+    color: theme.palette.text.secondary,
   },
   input: {
-    marginTop: 20
-  }
+    // paddingLeft: 5,
+    // paddingRight: 5,
+    marginRight: 5,
+    marginLeft: 5,
+    marginTop: 10,
+    width: "48%",
+  },
 }));
 
 export default function RegisterPatient() {
+  const formRef = useRef(null);
   const classes = useStyles();
   const [values, setValues] = React.useState({
     username: "",
@@ -46,51 +50,70 @@ export default function RegisterPatient() {
     checked: false,
     valid: false,
     acceptedTerms: false,
-    documentID: "",
-    birthday: new Date()
+    riskGroup: false,
+    // documentID: "",
+    zipcode: "",
   });
+
   function handleInputChange(name, value) {
     setValues({ ...values, [name]: value });
   }
   function validForm() {
-    const { email, password, username, acceptedTerms, documentID } = values;
-    if (
-      email.length > 6 &&
-      password.length > 6 &&
-      username.length > 6 &&
-      acceptedTerms === true &&
-      documentID.length > 11
-    ) {
+    const { acceptedTerms } = values;
+    if (acceptedTerms === true) {
       return false;
     } else {
       return true;
     }
   }
-  function parseDate(d) {
-    return format(d.valueOf(), "yyyy-MM-dd");
-  }
+
   function clearRegex(v) {
     return v.replace(/[^\w\s]/gi, "");
   }
-  async function handleRegister() {
+  async function handleRegister(data) {
     try {
-      const data = {
-        username: values.username,
-        email: values.email,
-        password: values.password,
-        checked: false,
-        valid: false,
-        acceptedTerms: values.acceptedTerms,
-        documentID: clearRegex(values.documentID),
-        birthday: parseDate(values.birthday)
-      };
       const register = await api.post("registerPatient", data);
-      history.push("/login");
+      history.push("/");
     } catch (e) {
       console.log("erro ao cadastrar", e);
     }
   }
 
+  async function handleSubmit(data, { reset }) {
+    try {
+      const schema = Yup.object().shape({
+        email: Yup.string().required("O email é obrigatório"),
+        username: Yup.string().required("O nome é obrigatório"),
+        password: Yup.string()
+          .required("A senha é obrigatóri com no minino 6 caracteres")
+          .min(6),
+        zipcode: Yup.string().required("O CEP é obrigatório"),
+        documentID: Yup.string()
+          .test("documentID", "Digite um CPF válido", (value) => {
+            return checkCPF(value);
+          })
+          .required("O CPF é obrigatório"),
+      });
+      await schema.validate(data, {
+        abortEarly: false,
+      });
+      data.documentID = clearRegex(data.documentID);
+      data.zipcode = clearRegex(data.zipcode);
+      data.riskGroup = values.riskGroup;
+      console.log(data);
+      await handleRegister(data);
+      reset();
+    } catch (e) {
+      if (e instanceof Yup.ValidationError) {
+        const errorMessages = {};
+        e.inner.forEach((error) => {
+          errorMessages[error.path] = error.message;
+        });
+        console.log(e);
+        formRef.current.setErrors(errorMessages);
+      }
+    }
+  }
   return (
     <Grid
       style={{ height: "100vh" }}
@@ -98,7 +121,7 @@ export default function RegisterPatient() {
       justify="center"
       container
     >
-      <Grid item md={4} lg={4} sm={12} xl={4} xs={12}>
+      <Grid item md={6} lg={6} sm={12} xl={6} xs={12}>
         <Paper className={classes.paper}>
           <div>
             <img
@@ -109,124 +132,78 @@ export default function RegisterPatient() {
           <Typography variant="h6" component="h2">
             Cadastrar
           </Typography>
-          <form className={classes.root} noValidate autoComplete="off">
-            <TextField
-              value={values.username}
-              onChange={value =>
-                handleInputChange("username", value.target.value)
-              }
-              fullWidth
-              id="username"
+          <Form ref={formRef} className={classes.root} onSubmit={handleSubmit}>
+            <Input
+              style={{ marginRight: 5, marginLeft: 5, width: "98%" }}
               label="Nome Completo"
-              variant="filled"
-              className={classes.input}
-              autoComplete="off"
-              helperText="Digite seu nome completo"
+              type="text"
+              name="username"
             />
-            <TextField
-              value={values.email}
-              onChange={value => handleInputChange("email", value.target.value)}
-              fullWidth
-              type="email"
-              id="email"
-              label="E-mail"
-              variant="filled"
+            <Input
               className={classes.input}
-              autoComplete="off"
-              helperText="Digite um e-mail válido"
+              label="e-mail"
+              type="email"
+              name="email"
             />
 
-            <TextField
-              value={values.password}
-              onChange={value =>
-                handleInputChange("password", value.target.value)
-              }
-              fullWidth
-              type="password"
-              id="password"
+            <Input
+              className={classes.input}
               label="Senha"
-              variant="filled"
-              className={classes.input}
-              helperText="Digite uma senha com no mínimo 6 caracteres"
+              type="password"
+              name="password"
             />
-            {/* <Input
-              value={values.birthday}
-              onChange={value => console.log("idade", value.target.value)}
-              fullWidth
-              id="birthday"
+            <Input
               className={classes.input}
-              autoComplete="off"
-              inputComponent={DateMask}
-            /> */}
-            <MuiPickersUtilsProvider utils={DateFnsUtils}>
-              <KeyboardDatePicker
-                className={classes.input}
-                fullWidth
-                inputVariant="filled"
-                variant="dialog"
-                disableToolbar
-                format="dd/MM/yyyy"
-                id="date-picker-inline"
-                label="Data de Nascimento"
-                value={values.birthday}
-                invalidLabel="Data ivalida"
-                onChange={value => handleInputChange("birthday", value)}
-                KeyboardButtonProps={{
-                  "aria-label": "change date"
-                }}
-              />
-            </MuiPickersUtilsProvider>
-            <TextField
-              value={values.documentID}
-              onChange={value =>
-                handleInputChange("documentID", cpfMask(value.target.value))
-              }
-              fullWidth
-              type="documentID"
-              id="documentID"
+              label="CEP"
+              mask="99999-999"
+              name="zipcode"
+            />
+            <Input
+              className={classes.input}
               label="CPF"
-              variant="filled"
-              className={classes.input}
-              helperText="Digite um cpf válido"
+              mask="999.999.999-99"
+              name="documentID"
             />
-            <div>
-              <TextField
-                className={classes.input}
-                fullWidth
-                id="termos"
-                label="Termos"
-                multiline
-                rows={6}
-                value="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam consectetur orci consequat eros pellentesque facilisis. Sed vehicula tincidunt risus in malesuada. Maecenas bibendum, metus vitae accumsan pharetra, libero justo luctus magna, eget imperdiet nisl dui nec quam. Donec maximus risus id blandit suscipit. Phasellus vitae orci quis risus tincidunt imperdiet non ac est. Suspendisse cursus, justo sit amet iaculis maximus, augue ligula faucibus erat, sit amet venenatis urna justo eu nisi. Maecenas cursus congue orci, vitae maximus mi iaculis ac. Ut auctor mauris metus, sit amet tempus nibh porttitor sed."
-                disabled
-                variant="filled"
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={values.acceptedTerms}
-                    onChange={value =>
-                      handleInputChange("acceptedTerms", value.target.checked)
-                    }
-                    color="primary"
-                    inputProps={{ "aria-label": "primary checkbox" }}
-                  />
-                }
-                label="Aceitar os termos"
-              />
-            </div>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={values.riskGroup}
+                  onChange={(value) =>
+                    handleInputChange("riskGroup", value.target.checked)
+                  }
+                  color="primary"
+                  inputProps={{ "aria-label": "primary checkbox" }}
+                />
+              }
+              label="Sou do grupo de risco da COVID-19"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={values.acceptedTerms}
+                  onChange={(value) =>
+                    handleInputChange("acceptedTerms", value.target.checked)
+                  }
+                  color="primary"
+                  inputProps={{ "aria-label": "primary checkbox" }}
+                />
+              }
+              label="Li e aceito os termos de uso e responsabilidade"
+            />
             <Button
               style={{ marginTop: 30, marginBlock: 20 }}
               fullWidth
               variant="contained"
               color="primary"
               size="large"
+              type="submit"
               disabled={validForm()}
-              onClick={() => handleRegister()}
+              // onClick={() => handleRegister()}
             >
               Entrar
             </Button>
-          </form>
+            {/* <button type="submit">Enviar</button> */}
+          </Form>
         </Paper>
       </Grid>
     </Grid>
